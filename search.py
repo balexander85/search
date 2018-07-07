@@ -15,6 +15,8 @@ from util import (
     RequestsHtmlWrapper,
 )
 
+NEED_TO_UPDATE = ['']
+
 
 class Result:
     """Create Search Result object with a parsed dictionary."""
@@ -191,10 +193,16 @@ if __name__ == '__main__':
     LOGGER.info(f'Searching for "{user_input}"')
     start_time = datetime.now()
 
-    site_results = ThePirateBay(query=user_input)
-    for counter, site_result in enumerate(site_results, 1):
-        print(f'{counter}) {site_result}')
+    search_sites = [
+        cls for cls in BaseSite.__subclasses__()
+        if cls.__name__ not in NEED_TO_UPDATE
+    ]
 
-    LOGGER.info(
-        f'Search duration {datetime.now() - start_time}'
-    )
+    for search_site in search_sites:
+        site_results = search_site(query=user_input)
+        for counter, site_result in enumerate(site_results, 1):
+            print(f'{counter}) {site_result}')
+
+        LOGGER.info(
+            f'Search duration {datetime.now() - start_time}'
+        )
