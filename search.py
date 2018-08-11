@@ -1,4 +1,5 @@
 """Search the web for items and get magnet url for Transmission"""
+from asyncio import ensure_future, gather, get_event_loop
 from datetime import datetime
 from typing import List
 
@@ -159,20 +160,27 @@ class ThePirateBay(BaseSite):
             ),
         }
 
+    async def _fetch_comments(self, result: Result):
+        if result.comment_count >= 1:
+            page_url: str = f'{self.base_url}{result.href}'
+            page = self.request_wrapper.get_page(page_url=page_url)
+            comments = parse_comments(
+                html=page, locator=self.PARSED_COMMENTS
+            )
+            if comments:
+                result.comments_section = format_comments(
+                    [c.text.replace('\n', '') for c in comments]
+                )
+        return result
+
     def fetch_comments(self, results: List[Result]) -> List[Result]:
         """Return a list of comments for a result if available."""
-        for result in results:
-            if result.comment_count >= 1:
-                page_url: str = f'{self.base_url}{result.href}'
-                page = self.request_wrapper.get_page(page_url=page_url)
-                comments = parse_comments(
-                    html=page, locator=self.PARSED_COMMENTS
-                )
-                if comments:
-                    result.comments_section = format_comments(
-                        [c.text.replace('\n', '') for c in comments]
-                    )
-        return results
+        loop = get_event_loop()
+        tasks = [
+            ensure_future(self._fetch_comments(result))
+            for result in results
+        ]
+        return loop.run_until_complete(gather(*tasks, return_exceptions=True))
 
     @property
     def results(self) -> List[Result]:
