@@ -50,11 +50,6 @@ def get_user_input() -> str:
         return input('Enter search query:\n')
 
 
-def parse_comments(html: HTML, locator: str) -> List[Element]:
-    """Return list of comments from page."""
-    return html.find(selector=locator)
-
-
 def print_border(name: str = None):
     """Print simple border to divide up output,
     if name print bottom border out too

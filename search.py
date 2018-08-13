@@ -11,7 +11,6 @@ from util import (
     format_comments,
     format_file_size,
     format_file_size_to_int,
-    parse_comments,
     print_border,
     RequestsHtmlWrapper,
 )
@@ -162,25 +161,26 @@ class ThePirateBay(BaseSite):
 
     async def _fetch_comments(self, result: Result):
         if result.comment_count >= 1:
+            LOGGER.debug(
+                f'_fetching comments: {result.__repr__()}'
+            )
             page_url: str = f'{self.base_url}{result.href}'
             page = self.request_wrapper.get_page(page_url=page_url)
-            comments = parse_comments(
-                html=page, locator=self.PARSED_COMMENTS
-            )
+            comments = page.find(selector=self.PARSED_COMMENTS)
             if comments:
                 result.comments_section = format_comments(
                     [c.text.replace('\n', '') for c in comments]
                 )
-        return result
 
-    def fetch_comments(self, results: List[Result]) -> List[Result]:
+    def add_comments(self, results: List[Result]):
         """Return a list of comments for a result if available."""
         loop = get_event_loop()
         tasks = [
             ensure_future(self._fetch_comments(result))
             for result in results
         ]
-        return loop.run_until_complete(gather(*tasks, return_exceptions=True))
+        loop.run_until_complete(gather(*tasks, return_exceptions=True))
+        loop.close()
 
     @property
     def results(self) -> List[Result]:
@@ -192,7 +192,7 @@ class ThePirateBay(BaseSite):
                 if row.find(self.RESULTS_ROW)
             ]
             if results:
-                return self.fetch_comments(results)
+                self.add_comments(results)
             return results
 
 
