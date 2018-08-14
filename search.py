@@ -1,5 +1,5 @@
 """Search the web for items and get magnet url for Transmission"""
-from asyncio import ensure_future, gather, get_event_loop
+from asyncio import ensure_future, gather, get_event_loop, sleep
 from datetime import datetime
 from typing import List
 
@@ -87,6 +87,7 @@ class BaseSite:
     @property
     def search_url(self) -> str:
         """Create search url with patch and whitespace replacement character"""
+        LOGGER.info(f'Searching for "{self.query}"')
         return self.base_url + self.SEARCH_URL_PATTERN.format(
             self.query.replace(' ', self.WHITESPACE_PATTERN)
         )
@@ -165,6 +166,8 @@ class ThePirateBay(BaseSite):
                 f'_fetching comments: {result.__repr__()}'
             )
             page_url: str = f'{self.base_url}{result.href}'
+            LOGGER.debug(f'Await sleeping: {datetime.now()} {result.href}')
+            await sleep(1)
             page = self.request_wrapper.get_page(page_url=page_url)
             comments = page.find(selector=self.PARSED_COMMENTS)
             if comments:
@@ -198,7 +201,6 @@ class ThePirateBay(BaseSite):
 
 if __name__ == '__main__':
     user_input = get_user_input()
-    LOGGER.info(f'Searching for "{user_input}"')
     start_time = datetime.now()
 
     search_sites = [
