@@ -123,7 +123,7 @@ class ThePirateBay(BaseSite):
             self,
             protocol: str = "https",
             domain: str = "thepiratebay",
-            tdl: str = "org",
+            tdl: str = "icu",
             query: str = None
     ):
         BaseSite.__init__(
