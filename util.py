@@ -3,8 +3,9 @@ but not necessarily related to the searching itself.
 """
 from logging import basicConfig, getLogger, INFO
 from re import match as regex_match
+from requests import HTTPError
 from sys import argv, stdout
-from typing import List, Union
+from typing import Union
 
 from humanfriendly import parse_size
 from requests_html import Element, HTML, HTMLResponse, HTMLSession
@@ -19,7 +20,7 @@ basicConfig(
 LOGGER = getLogger("Search Logger")
 
 
-def format_comments(comments: List[str]) -> List[str]:
+def format_comments(comments: [str]) -> [str]:
     """Add #.) to each comment"""
     return [f'{i}.) {comment}' for i, comment in enumerate(comments, 1)]
 
@@ -66,6 +67,18 @@ def save_page(html: HTML, file_name: str = "test.html"):
         f.write(html.html)
 
 
+def retry_if_http_error(exception) -> bool:
+    """Return True if we should retry, False otherwise"""
+    LOGGER.error(f'RetryException: {exception}')
+    return isinstance(exception, HTTPError)
+
+
+def retry_if_result_is_none(result) -> bool:
+    """Return True if we should retry, False otherwise"""
+    LOGGER.debug(f'RetryResult: {result}')
+    return result is None
+
+
 class RequestsHtmlWrapper:
     """A Wrapper class for the request_html library.
 
@@ -107,7 +120,7 @@ class RequestsHtmlWrapper:
     def __repr__(self) -> str:
         return f'<Request_HTML_Wrapper url={self.url}>'
 
-    def __call__(self, tag_name) -> List[Element]:
+    def __call__(self, tag_name) -> [Element]:
         """Shortcut method for HTMLResponse.html.find just like BeautifulSoup
 
         Returns:
@@ -116,18 +129,24 @@ class RequestsHtmlWrapper:
         return self.html.find(selector=tag_name)
 
     @property
-    @retry(wait_fixed=500, stop_max_attempt_number=5)
+    @retry(
+        wait_fixed=500,
+        stop_max_attempt_number=3,
+        retry_on_exception=retry_if_http_error,
+        retry_on_result=retry_if_result_is_none,
+        wrap_exception=True
+    )
     def __response(self) -> HTMLResponse:
         """Return HTMLResponse with the instance's url."""
         response: HTMLResponse = self.session.get(
-            url=self.url, headers=self.headers, cookies=self.cookies
+            url=self.url,
+            headers=self.headers,
+            cookies=self.cookies
         )
         response.raise_for_status()
         return response
 
     def get_page(self, page_url: str) -> HTML:
         """Make request with given url and return html"""
-        response: HTMLResponse = self.session.get(
-            url=page_url, headers=self.headers, cookies=self.cookies
-        )
-        return response.html
+        self.url = page_url
+        return self.__response.html
