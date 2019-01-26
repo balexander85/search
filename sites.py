@@ -45,7 +45,11 @@ class BaseSite:
 
     def __iter__(self) -> Result:
         """Iterate through each result found from search query."""
-        for result in self.results:
+        for result in sorted(
+                self.results,
+                key=lambda x: x.seeders,
+                reverse=True
+        ):
             yield result
 
     @property
