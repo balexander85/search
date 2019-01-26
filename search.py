@@ -13,7 +13,7 @@ if __name__ == '__main__':
         site_results = search_site(query=user_input)
         for counter, site_result in enumerate(
                 iterable=sorted(
-                    iterable=site_results,
+                    site_results,
                     key=lambda x: x.seeders,
                     reverse=True
                 ),
