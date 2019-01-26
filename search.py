@@ -11,7 +11,14 @@ if __name__ == '__main__':
 
     for search_site in search_sites:
         site_results = search_site(query=user_input)
-        for counter, site_result in enumerate(site_results, 1):
+        for counter, site_result in enumerate(
+                iterable=sorted(
+                    iterable=site_results,
+                    key=lambda x: x.seeders,
+                    reverse=True
+                ),
+                start=1
+        ):
             LOGGER.info(f'{counter}) {site_result}')
 
         LOGGER.info(
