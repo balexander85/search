@@ -7,7 +7,6 @@ from util import (
     LOGGER,
     get_first_element,
     format_comments,
-    print_border,
     RequestsHtmlWrapper,
 )
 
@@ -34,7 +33,7 @@ class BaseSite:
         :param tdl: Top Level Domain for website.
         :param query: User's search query
         """
-        print_border(self.__class__.__name__)
+        LOGGER.info(f'Searching "{self.__class__.__name__}"')
         self.base_url: str = f"{protocol}://{domain}.{tdl}"
         self.query: str = query
         self.request_wrapper: RequestsHtmlWrapper = RequestsHtmlWrapper(
