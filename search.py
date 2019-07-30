@@ -5,15 +5,13 @@ from sites import search_sites
 from util import LOGGER, get_user_input
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     user_input = get_user_input()
     start_time = datetime.now()
 
     for search_site in search_sites:
         site_results = search_site(query=user_input)
         for counter, site_result in enumerate(site_results, start=1):
-            LOGGER.info(f'{counter}) {site_result}')
+            LOGGER.info(f"{counter}) {site_result}")
 
-        LOGGER.info(
-            f'Search duration {datetime.now() - start_time}'
-        )
+        LOGGER.info(f"Search duration {datetime.now() - start_time}")

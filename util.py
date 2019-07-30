@@ -12,24 +12,19 @@ from requests_html import Element, HTML, HTMLResponse, HTMLSession
 from retrying import retry
 
 # Setting up logger
-basicConfig(
-    level=INFO,
-    format="%(levelname)7s: %(message)s",
-    stream=stdout,
-)
+basicConfig(level=INFO, format="%(levelname)7s: %(message)s", stream=stdout)
 LOGGER = getLogger("Search Logger")
 
 
 def format_comments(comments: [str]) -> [str]:
     """Add #.) to each comment"""
-    return [f'{i}.) {comment}' for i, comment in enumerate(comments, 1)]
+    return [f"{i}.) {comment}" for i, comment in enumerate(comments, 1)]
 
 
 def format_file_size(size: str) -> str:
     """Returns file size in a formatted string (i.e. 706 MiB)"""
-    return '{} {}'.format(
-        *regex_match(
-            r'^.*?(?=(\d+.?\d*)).+?(?:(B|KiB|MiB|GiB|MB|GB))', size).groups()
+    return "{} {}".format(
+        *regex_match(r"^.*?(?=(\d+.?\d*)).+?(?:(B|KiB|MiB|GiB|MB|GB))", size).groups()
     )
 
 
@@ -48,17 +43,17 @@ def get_user_input() -> str:
     try:
         return argv[1]
     except IndexError:
-        return input('Enter search query:\n')
+        return input("Enter search query:\n")
 
 
 def print_border(name: str = None):
     """Print simple border to divide up output,
     if name print bottom border out too
     """
-    print(158*'*')
+    print(158 * "*")
     if name:
         print(f'{70*"#"}{name}{70*"#"}')
-        print(158*"*")
+        print(158 * "*")
 
 
 def save_page(html: HTML, file_name: str = "test.html"):
@@ -69,13 +64,13 @@ def save_page(html: HTML, file_name: str = "test.html"):
 
 def retry_if_http_error(exception) -> bool:
     """Return True if we should retry, False otherwise"""
-    LOGGER.error(f'RetryException: {exception}')
+    LOGGER.error(f"RetryException: {exception}")
     return isinstance(exception, HTTPError)
 
 
 def retry_if_result_is_none(result) -> bool:
     """Return True if we should retry, False otherwise"""
-    LOGGER.debug(f'RetryResult: {result}')
+    LOGGER.debug(f"RetryResult: {result}")
     return result is None
 
 
@@ -106,11 +101,11 @@ class RequestsHtmlWrapper:
         web_element = request_wrapper.html.find(locator)
     """
 
-    def __init__(self, url: str, agent: str = 'Mozilla/5.0'):
+    def __init__(self, url: str, agent: str = "Mozilla/5.0"):
         self.session: HTMLSession = HTMLSession()
         self.headers: dict = {
-            'Content-Type': 'text/plain; charset=UTF-8',
-            'User-Agent': agent
+            "Content-Type": "text/plain; charset=UTF-8",
+            "User-Agent": agent,
         }
         self.url: str = url
         self.cookies = None
@@ -118,7 +113,7 @@ class RequestsHtmlWrapper:
         self.html: HTML = self.response.html
 
     def __repr__(self) -> str:
-        return f'<Request_HTML_Wrapper url={self.url}>'
+        return f"<Request_HTML_Wrapper url={self.url}>"
 
     def __call__(self, tag_name) -> [Element]:
         """Shortcut method for HTMLResponse.html.find just like BeautifulSoup
@@ -134,14 +129,12 @@ class RequestsHtmlWrapper:
         stop_max_attempt_number=3,
         retry_on_exception=retry_if_http_error,
         retry_on_result=retry_if_result_is_none,
-        wrap_exception=True
+        wrap_exception=True,
     )
     def __response(self) -> HTMLResponse:
         """Return HTMLResponse with the instance's url."""
         response: HTMLResponse = self.session.get(
-            url=self.url,
-            headers=self.headers,
-            cookies=self.cookies
+            url=self.url, headers=self.headers, cookies=self.cookies
         )
         response.raise_for_status()
         return response
