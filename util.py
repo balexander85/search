@@ -138,8 +138,3 @@ class RequestsHtmlWrapper:
         )
         response.raise_for_status()
         return response
-
-    def get_page(self, page_url: str) -> HTML:
-        """Make request with given url and return html"""
-        self.url = page_url
-        return self.__response.html

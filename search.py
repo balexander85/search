@@ -1,18 +1,18 @@
 """Search the web for items and get magnet url for Transmission"""
 from datetime import datetime
 
-from sites import search_sites
-from util import LOGGER, get_user_input, print_border
+from sites import search_all_sites
+from util import LOGGER, get_user_input
 
 
 if __name__ == "__main__":
     user_input = get_user_input()
     start_time = datetime.now()
 
-    for search_site in search_sites:
-        print_border(search_site.__name__)
-        site_results = search_site(query=user_input)
-        for counter, site_result in enumerate(site_results, start=1):
-            LOGGER.info(f"{counter}) {site_result}")
+    all_results = search_all_sites(query=user_input)
 
-        LOGGER.info(f"Search duration {datetime.now() - start_time}")
+    for counter, result in enumerate(all_results, start=1):
+        LOGGER.info(f"{counter}) {result}")
+
+    end_time = datetime.now()
+    LOGGER.info(f"Search duration {end_time - start_time}")

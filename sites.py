@@ -1,16 +1,12 @@
 from asyncio import ensure_future, gather, get_event_loop, sleep
 from datetime import datetime
+from typing import List
 
 from requests_html import HTML, Element
 from results import Result
-from util import (
-    LOGGER,
-    get_first_element,
-    format_comments,
-    RequestsHtmlWrapper,
-)
+from util import LOGGER, get_first_element, format_comments, RequestsHtmlWrapper
 
-NEED_TO_UPDATE = [""]
+NEED_TO_UPDATE = ["ThePirateBay"]
 
 
 class BaseSite:
@@ -20,52 +16,19 @@ class BaseSite:
     WHITESPACE_PATTERN = "+"
 
     def __init__(
-        self,
-        protocol: str = "http",
-        domain: str = "example",
-        tdl: str = "com",
-        query: str = None,
+        self, protocol: str = "http", domain: str = "example", tdl: str = "com"
     ):
         """Construct URL with these base attributes.
 
         :param protocol: Protocol used for website.
         :param domain: Name of the domain where the web server belongs.
         :param tdl: Top Level Domain for website.
-        :param query: User's search query
         """
-        LOGGER.info(f'Searching "{self.__class__.__name__}"')
         self.base_url: str = f"{protocol}://{domain}.{tdl}"
-        self.query: str = query
-        self.request_wrapper: RequestsHtmlWrapper = RequestsHtmlWrapper(
-            url=self.search_url
-        )
-        self.html: HTML = self.request_wrapper.html
+        LOGGER.info(f"Searching {self}")
 
-    def __iter__(self) -> Result:
-        """Iterate through each result found from search query
-
-        This also sorts the results by seeders with most seeders at top.
-        """
-        for result in sorted(self.results, key=lambda x: x.seeders, reverse=True):
-            yield result
-
-    @property
-    def search_url(self) -> str:
-        """Create search url with patch and whitespace replacement character"""
-        LOGGER.info(f'Searching for "{self.query}"')
-        return self.base_url + self.SEARCH_URL_PATTERN.format(
-            self.query.replace(" ", self.WHITESPACE_PATTERN)
-        )
-
-    @property
-    def results(self) -> [dict]:
-        """Abstract property which returns a list of results from search.
-
-        Note: Will raise error if not implemented in subclass.
-        """
-        raise NotImplementedError(
-            "Subclasses that use BaseSite must implement results property."
-        )
+    def __str__(self):
+        return f"<{self.__class__.__name__} url='{self.base_url}'>"
 
 
 class ThePirateBay(BaseSite):
@@ -84,17 +47,8 @@ class ThePirateBay(BaseSite):
     UPLOADER_TRUSTED = 'img[@alt="Trusted"]'
     PARSED_COMMENTS = "div.comment"
 
-    def __init__(
-        self,
-        protocol: str = "https",
-        domain: str = "thepiratebay",
-        tdl: str = "icu",
-        query: str = None,
-    ):
-        BaseSite.__init__(self, protocol=protocol, domain=domain, tdl=tdl, query=query)
-        self.results_table: Element = get_first_element(
-            html=self.html, locator=self.RESULTS_TABLE
-        )
+    def __init__(self, protocol: str, domain: str, tdl: str):
+        super().__init__(protocol=protocol, domain=domain, tdl=tdl)
 
     def parse_row(self, obj: Element) -> dict:
         """Parse object for item information."""
@@ -127,34 +81,60 @@ class ThePirateBay(BaseSite):
             page_url: str = f"{self.base_url}{result.href}"
             LOGGER.debug(f"Await sleeping: {datetime.now()} {result.href}")
             await sleep(1)
-            page = self.request_wrapper.get_page(page_url=page_url)
+            page = RequestsHtmlWrapper(url=page_url).html
             comments = page.find(selector=self.PARSED_COMMENTS)
             if comments:
                 result.comments_section = format_comments(
                     [c.text.replace("\n", "") for c in comments]
                 )
 
-    def add_comments(self, results: [Result]):
+    def add_comments(self, results: List[Result]):
         """Return a list of comments for a result if available."""
         loop = get_event_loop()
         tasks = [ensure_future(self._fetch_comments(result)) for result in results]
         loop.run_until_complete(gather(*tasks, return_exceptions=True))
         loop.close()
 
-    @property
-    def results(self) -> [Result]:
-        """Returning results from this site."""
-        if self.results_table:
+    def search(self, query: str) -> List[Result]:
+        """Base method for search."""
+        LOGGER.info(f'Searching for "{query}"')
+        search_url = self.base_url + self.SEARCH_URL_PATTERN.format(
+            query.replace(" ", self.WHITESPACE_PATTERN)
+        )
+        html: HTML = RequestsHtmlWrapper(url=search_url).html
+        results_table: Element = get_first_element(
+            html=html, locator=self.RESULTS_TABLE
+        )
+        if results_table:
             results: [Result] = [
                 Result(self.parse_row(row))
-                for row in self.results_table.find("tr")
+                for row in results_table.find("tr")
                 if row.find(self.RESULTS_ROW)
             ]
-            if results:
-                self.add_comments(results)
+            # if results:
+            #     self.add_comments(results)
             return results
 
 
-search_sites = [
-    cls for cls in BaseSite.__subclasses__() if cls.__name__ not in NEED_TO_UPDATE
+tpb_mirrors = [
+    {"protocol": "https", "domain": "thepiratebay", "tdl": "icu"},
+    {"protocol": "https", "domain": "piratebayblocked", "tdl": "com"},
+    {"protocol": "https", "domain": "tpb", "tdl": "date"},
 ]
+tpb_sites = [ThePirateBay(**tpb_instance) for tpb_instance in tpb_mirrors]
+
+search_sites = [
+    cls() for cls in BaseSite.__subclasses__() if cls.__name__ not in NEED_TO_UPDATE
+]
+search_sites.extend(tpb_sites)
+
+
+def search_all_sites(query: str) -> List[Result]:
+    all_results = []
+    LOGGER.debug(msg=f"user_input: {query}")
+    for search_site in search_sites:
+        for result in search_site.search(query=query):
+            all_results.append(result)
+    set_results = set(all_results)
+    sorted_results = sorted(set_results, key=lambda x: x.seeders, reverse=True)
+    return sorted_results

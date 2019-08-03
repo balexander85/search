@@ -21,7 +21,7 @@ class Result:
         self.magnet_link: str = obj.get("magnet_link")
 
     def __str__(self) -> str:
-        """ Return str(self). """
+        """Return str(self)."""
         return (
             f"{self.name} | Size: {self.file_size} | Seed: {self.seeders} "
             f"| Leach: {self.leachers} | Trusted: {self.trusted} |"
@@ -30,5 +30,19 @@ class Result:
         )
 
     def __repr__(self) -> str:
-        """ Return repr(self). """
+        """Return repr(self)."""
         return f"{self.name}"
+
+    def __hash__(self):
+        """Return hash(self)."""
+        return hash((self.name, self.uploader, self.magnet_link))
+
+    def __eq__(self, other: "Result"):
+        """Return self==value."""
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return (
+            self.name == other.name
+            and self.uploader == other.uploader
+            and self.magnet_link == other.magnet_link
+        )
