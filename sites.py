@@ -97,10 +97,10 @@ class ThePirateBay(BaseSite):
 
     def search(self, query: str) -> List[Result]:
         """Base method for search."""
-        LOGGER.info(f'Searching for "{query}"')
         search_url = self.base_url + self.SEARCH_URL_PATTERN.format(
             query.replace(" ", self.WHITESPACE_PATTERN)
         )
+        LOGGER.info(f'Searching {search_url} for "{query}"')
         html: HTML = RequestsHtmlWrapper(url=search_url).html
         results_table: Element = get_first_element(
             html=html, locator=self.RESULTS_TABLE
@@ -114,6 +114,7 @@ class ThePirateBay(BaseSite):
             # if results:
             #     self.add_comments(results)
             return results
+        return []
 
 
 tpb_mirrors = [
