@@ -1,8 +1,8 @@
 """Search the web for items and get magnet url for Transmission"""
 from datetime import datetime
 
-from sites import search_all_sites
-from util import LOGGER, get_user_input
+from search.sites import search_all_sites
+from search.util import LOGGER, get_user_input
 
 
 if __name__ == "__main__":

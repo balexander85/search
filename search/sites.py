@@ -3,8 +3,8 @@ from datetime import datetime
 from typing import List
 
 from requests_html import HTML, Element
-from results import Result
-from util import LOGGER, get_first_element, format_comments, RequestsHtmlWrapper
+from search.results import Result
+from search.util import LOGGER, get_first_element, format_comments, RequestsHtmlWrapper
 
 NEED_TO_UPDATE = ["ThePirateBay"]
 

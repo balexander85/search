@@ -1,4 +1,4 @@
-from util import format_file_size, format_file_size_to_int
+from search.util import format_file_size, format_file_size_to_int
 
 
 class Result:
