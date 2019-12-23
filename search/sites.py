@@ -117,10 +117,12 @@ class ThePirateBay(BaseSite):
         return []
 
 
+# https://pirateproxys.com/
 tpb_mirrors = [
-    {"protocol": "https", "domain": "thepiratebay", "tdl": "icu"},
-    {"protocol": "https", "domain": "piratebayblocked", "tdl": "com"},
-    {"protocol": "https", "domain": "tpb", "tdl": "date"},
+    {"protocol": "https", "domain": "thepiratebay", "tdl": "org"},
+    #{"protocol": "https", "domain": "piratebay", "tdl": "icu"},
+    #{"protocol": "https", "domain": "piratebayblocked", "tdl": "com"},
+    #{"protocol": "https", "domain": "tpb", "tdl": "date"},
 ]
 tpb_sites = [ThePirateBay(**tpb_instance) for tpb_instance in tpb_mirrors]
 
